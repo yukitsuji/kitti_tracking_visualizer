@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     }
     const unsigned int imageSetsId = atoi(argv[1]);
 
-    const std::string dataSetsRootDir = "/home/yukitsuji/dataset/kitti_tracking/training";
+    const std::string dataSetsRootDir = "/Users/tsujiyuuki/programming/dataset/kitti_tracking/training";
     const std::string calibFilePath = str(boost::format("%s/calib/%04d.txt") % dataSetsRootDir % imageSetsId);
     const std::string labelFilePath = str(boost::format("%s/label_02/%04d.txt") % dataSetsRootDir % imageSetsId);
     const Eigen::MatrixXd calibToImageAffineMatrix = mono_3d_det::ParseCalibFile(calibFilePath);
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
             // ================================================
 
             // === draw the BB on the image ===
-            // win.Draw3DBoundingBoxOnImage(calibToImageAffineMatrix * corners3DBBCamHomoCoordMatrix);
+            win.Draw3DBoundingBoxOnImage(calibToImageAffineMatrix * corners3DBBCamHomoCoordMatrix);
 
             win.Draw2DBoundingBoxOnImage((int)tracklets[obj_i].x_2d_left,
                                          (int)tracklets[obj_i].x_2d_right,
@@ -137,80 +137,6 @@ int main(int argc, char *argv[])
             // === draw the 2D BB on the Bird's view window ===
             win.Draw2DBoundingBoxBirdsView(corners3DBBCamHomoCoordMatrix,
                                            "red");
-            // ================================================
-
-            // === calc the obj pos on the ground plane ===
-            // with a fixed ground plane
-            Eigen::Vector3d bottomCenter2DBBPixHomoCoord(
-                (tracklets[obj_i].x_2d_left + tracklets[obj_i].x_2d_right) / 2,
-                tracklets[obj_i].y_2d_bottom,
-                1);
-
-            // the normal of the ground plane
-            Eigen::Vector3d N(0, -std::cos(THETA), std::sin(THETA));
-
-            // back-projection from 2D to 3D
-            Eigen::Vector3d calibrated =
-                calibToImageRotateMatrix.inverse() * bottomCenter2DBBPixHomoCoord;
-            Eigen::Vector3d bottomCenter3DBBCamCoord =
-                -HEIGHT * calibrated / N.dot(calibrated);
-
-            // calc the center of the object
-            Eigen::Vector3d bottomToCenter(0, 0, l / 2);
-            Eigen::Matrix3d rotateYAxis;
-
-            double angle = yaw_rad;
-            if (angle < 0) angle += M_PI;
-            angle = angle - M_PI / 2;
-            // if (angle < 0) angle += M_PI;
-            // angle = angle + M_PI;
-            // if (angle < 0) angle += M_PI;
-            rotateYAxis << std::cos(angle), 0, std::sin(angle),
-                0, 1, 0,
-                -std::sin(angle), 0, std::cos(angle);
-
-            Eigen::Vector3d center3DBBCamCoord =
-                rotateYAxis * bottomToCenter + bottomCenter3DBBCamCoord;
-
-            std::cout << rotateYAxis << "\n";
-            std::cout << "yaw_rad: " << yaw_rad << " " << angle << "\n";
-            std::cout << "rotateYAxis * bottomToCenter: " << rotateYAxis * bottomToCenter << "\n";
-            std::cout << "bottomCenter3DBBCamCoord: " << bottomCenter3DBBCamCoord << "\n";
-            std::cout << "center3DBBCamCoord: " << center3DBBCamCoord << "\n";
-
-            // Eigen::Vector3d center3DBBCamCoord = bottomCenter3DBBCamCoord;
-
-            // std::cout << boost::format("true x: %f y: %f z: %f\n") % x % y % z;
-            // std::cout << boost::format("calc x: %f y: %f z: %f\n") %
-            //                  center3DBBCamCoord[0] %
-            //                  center3DBBCamCoord[1] %
-            //                  center3DBBCamCoord[2];
-
-            // calc 4 corners coordinate from bird's view
-            affineYAxisMatrix << std::cos(yaw_rad), 0, std::sin(yaw_rad), center3DBBCamCoord[0],
-                0, 1, 0, center3DBBCamCoord[1],
-                -std::sin(yaw_rad), 0, std::cos(yaw_rad), center3DBBCamCoord[2],
-                0, 0, 0, 1;
-
-            const std::vector<double> tmp_x_corners{l / 2, l / 2, -l / 2, -l / 2,
-                                                l / 2, l / 2, -l / 2, -l / 2};
-            const std::vector<double> tmp_y_corners{0, 0, 0, 0, -h, -h, -h, -h};
-            const std::vector<double> tmp_z_corners{w / 2, -w / 2, -w / 2, w / 2,
-                                                w / 2, -w / 2, -w / 2, w / 2};
-            // const std::vector<double> tmp_z_corners{0, -w, -w, 0, 0, -w, -w, 0};
-            for (int i = 0; i < 8; i++)
-            {
-                corners3DBBObjHomoCoordMatrix(0, i) = tmp_x_corners[i];
-                corners3DBBObjHomoCoordMatrix(1, i) = tmp_y_corners[i];
-                corners3DBBObjHomoCoordMatrix(2, i) = tmp_z_corners[i];
-                corners3DBBObjHomoCoordMatrix(3, i) = 1;
-            }
-
-            win.Draw2DBoundingBoxBirdsView(
-                affineYAxisMatrix * corners3DBBObjHomoCoordMatrix,
-                "green");
-
-            win.Draw3DBoundingBoxOnImage(calibToImageAffineMatrix * affineYAxisMatrix * corners3DBBObjHomoCoordMatrix);
         }
 
         win.Concat();
@@ -218,18 +144,18 @@ int main(int argc, char *argv[])
 
         while (int pressed_key = (win.WaitKey() & 0xff))
         {
-            // std::cout << "pressed key num: " << pressed_key << std::endl;
+            std::cout << "pressed key num: " << pressed_key << std::endl;
             if (pressed_key == 113) // q
             {
                 return 0;
             }
-            else if (pressed_key == 83) // →
+            else if (pressed_key == 3) // →
             {
                 if (image_id < imageLast)
                     image_id++;
                 break;
             }
-            else if (pressed_key == 81) // ←
+            else if (pressed_key == 2) // ←
             {
                 if (image_id > 1)
                     image_id--;
@@ -237,6 +163,5 @@ int main(int argc, char *argv[])
             }
         }
     }
-
     return 0;
 }

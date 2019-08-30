@@ -176,7 +176,7 @@ namespace mono_3d_det {
 
     private:
 
-        double back_project_3d(double h, cv::Mat n, cv::Mat camera_k, cv::Mat camera_inv_k)
+        void back_project_3d(double h, cv::Mat n, cv::Mat camera_k, cv::Mat camera_inv_k)
         {
             B1Q_ = (h * camera_inv_k * b1Q_) / (n * camera_inv_k * b1Q_);
         }
